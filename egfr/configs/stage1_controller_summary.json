@@ -1,0 +1,415 @@
+{
+ "tag": "egfr_h409_night1",
+ "stopping": "goal reached: 21 backbones pass gate 'cross'",
+ "loops": 48,
+ "elapsed_h": 0.89,
+ "spend_usd": 62.23,
+ "shards": {
+  "prod_seed7000": "done",
+  "prod_seed7001": "done",
+  "prod_seed7002": "done",
+  "prod_seed7003": "done",
+  "prod_seed7004": "done",
+  "prod_seed7005": "done",
+  "prod_seed7006": "done",
+  "prod_seed7007": "done",
+  "prod_seed7008": "done",
+  "prod_seed7009": "done",
+  "prod_seed7010": "done",
+  "prod_seed7011": "done",
+  "prod_seed7012": "done",
+  "prod_seed7013": "done",
+  "prod_seed7014": "done",
+  "prod_seed7015": "done",
+  "prod_seed8013": "external",
+  "prod_seed8011": "external",
+  "prod_seed8015": "external",
+  "prod_seed8002": "external",
+  "prod_seed8008": "external",
+  "prod_seed8009": "external",
+  "prod_seed8010": "external",
+  "prod_seed8012": "external",
+  "prod_seed8000": "external",
+  "prod_seed8005": "external",
+  "prod_seed8006": "external",
+  "prod_seed8007": "external",
+  "prod_seed8004": "external",
+  "prod_seed8014": "external",
+  "prod_seed8001": "external",
+  "prod_seed8003": "external"
+ },
+ "trajectories": 456,
+ "candidates": 4891,
+ "backbones": 231,
+ "backbones_screened": 119,
+ "backbones_refolded": 65,
+ "pass_human": 65,
+ "pass_cross": 21,
+ "pass_cross_ph": 15,
+ "refolds": {
+  "running": 0,
+  "done": 284,
+  "failed": 0,
+  "cancelled": 0
+ },
+ "queue": 0,
+ "passing": [
+  {
+   "backbone": "EGFR_d3_H409_denovo_l113_19678b5268e9dddf",
+   "best": "EGFR_d3_H409_denovo_l113_19678b5268e9dddf_candidate5",
+   "rank_score": 1.3949,
+   "cross_ph": true,
+   "binder_seq": "LPMLLEQLLIMFEMLLTELELEGWHLEWNPVPEAEEARKRLEKLRELVRRMIELVEEMLEALEKNDLEKVKELLLEIKKIVEEMEKIASDDPLEKRMLAHINRLLEVMLEKLE",
+   "human": {
+    "iptm": 0.9222412705421448,
+    "ipsae": 0.8964,
+    "log10_Ka_ratio_all": 1.467,
+    "anchor_d_carboxylate": 3.17
+   },
+   "mouse": {
+    "iptm": 0.8681915402412415,
+    "ipsae": 0.8282
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l114_c95cacd16544fbb6",
+   "best": "EGFR_d3_H409_denovo_l114_c95cacd16544fbb6_candidate2",
+   "rank_score": 1.2759,
+   "cross_ph": true,
+   "binder_seq": "SELLEELVELARELYKVLWDIIHNGKPKERTDDWEKMLKLMVLETELYLLMDDIVRMIREGKETTPEFRKTVEEALKTLKEYKKLLEELNFEIPEEHKEILERTIEVLEKVLEG",
+   "human": {
+    "iptm": 0.9207732081413269,
+    "ipsae": 0.8974,
+    "log10_Ka_ratio_all": 1.187,
+    "anchor_d_carboxylate": 3.28
+   },
+   "mouse": {
+    "iptm": 0.8086998462677002,
+    "ipsae": 0.7092
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l93_482b9c696b36c2d7",
+   "best": "EGFR_d3_H409_denovo_l93_482b9c696b36c2d7_candidate4",
+   "rank_score": 1.1718,
+   "cross_ph": true,
+   "binder_seq": "MKEVEKEALKLLYELKREVYRAKYELDFMEMTQVYDPAYWEKIDPKIEPLLEKLEKFLKENKIENEELKKLIEEVLKLYEEVKERKKEMEKSQ",
+   "human": {
+    "iptm": 0.9187014102935791,
+    "ipsae": 0.9142,
+    "log10_Ka_ratio_all": 0.68,
+    "anchor_d_carboxylate": 2.77
+   },
+   "mouse": {
+    "iptm": 0.8167272806167603,
+    "ipsae": 0.7345
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l111_dcbc7fb33de43a74",
+   "best": "EGFR_d3_H409_denovo_l111_dcbc7fb33de43a74_candidate2",
+   "rank_score": 1.1324,
+   "cross_ph": true,
+   "binder_seq": "SMAELQEKLRRMAELLEELVKLLLSLVVEEPSGLSKEEIIKKIEELLKEIEELMEEIRRLHRESDSPFSDADMEYLEELLEEVIEAFKKKEWVQAHFRADYLLQLVKRMAR",
+   "human": {
+    "iptm": 0.9380219578742981,
+    "ipsae": 0.9395,
+    "log10_Ka_ratio_all": 0.069,
+    "anchor_d_carboxylate": 3.12
+   },
+   "mouse": {
+    "iptm": 0.8947696685791016,
+    "ipsae": 0.8784
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l86_d33b2b22d49145a3",
+   "best": "EGFR_d3_H409_denovo_l86_d33b2b22d49145a3_candidate4",
+   "rank_score": 1.1145,
+   "cross_ph": true,
+   "binder_seq": "ALELAEQLVEVSQEIIEEYKDTMDPEDLVYAYTFDDFLRWLVEYMKRHKEWSMEELYARLKEFASLYGERMQYWLDLVLSRYKEKL",
+   "human": {
+    "iptm": 0.9447304606437683,
+    "ipsae": 0.9242,
+    "log10_Ka_ratio_all": 0.967,
+    "anchor_d_carboxylate": 3.06
+   },
+   "mouse": {
+    "iptm": 0.8750765919685364,
+    "ipsae": 0.7911
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l117_c2646992ca6c3ad9",
+   "best": "EGFR_d3_H409_denovo_l117_c2646992ca6c3ad9_candidate9",
+   "rank_score": 1.0916,
+   "cross_ph": true,
+   "binder_seq": "SEEIKLLEEILKILERAIKLLDELIEKLKKAEKGMSKEEHLEIYRMIREYDELMDQIFPLLQKIPNISKEVLEKWEELVIYDLTNRYKSVEKWEELKKKLEELKELVEEELKKLKEK",
+   "human": {
+    "iptm": 0.9319792985916138,
+    "ipsae": 0.9074,
+    "log10_Ka_ratio_all": 0.781,
+    "anchor_d_carboxylate": 2.64
+   },
+   "mouse": {
+    "iptm": 0.8764010071754456,
+    "ipsae": 0.824
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l109_df54aeda5ebf25dc",
+   "best": "EGFR_d3_H409_denovo_l109_df54aeda5ebf25dc_candidate4",
+   "rank_score": 1.0547,
+   "cross_ph": true,
+   "binder_seq": "SLEELEEIVEELLKNPEKYPLEEILEKLKEIIEKLKEEYVELTEKMMNDELPKEEYKERIEKLEKIAKGLLEVLEKLRELYGDNPEIIHLMYEARKLIYDAGFLKELAM",
+   "human": {
+    "iptm": 0.9372882843017578,
+    "ipsae": 0.9241,
+    "log10_Ka_ratio_all": 0.276,
+    "anchor_d_carboxylate": 3.62
+   },
+   "mouse": {
+    "iptm": 0.8135161399841309,
+    "ipsae": 0.7052
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l119_7921ac4c6edb3318",
+   "best": "EGFR_d3_H409_denovo_l119_7921ac4c6edb3318_candidate1",
+   "rank_score": 1.0467,
+   "cross_ph": true,
+   "binder_seq": "FKEKLEELLKLAEEALKLIEEMIENVDDEEKFKELFEKFEKLVEEILKLAKEIWEKLSEKVKKALFELYMKYMRFRYDLPLLEYFEKEKRKEILKKMLEEIKKALEELIKELKKELESL",
+   "human": {
+    "iptm": 0.91848224401474,
+    "ipsae": 0.8941,
+    "log10_Ka_ratio_all": 0.161,
+    "anchor_d_carboxylate": 3.13
+   },
+   "mouse": {
+    "iptm": 0.838408350944519,
+    "ipsae": 0.7651
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l83_719ffb2b6f60e001",
+   "best": "EGFR_d3_H409_denovo_l83_719ffb2b6f60e001_candidate2",
+   "rank_score": 1.0423,
+   "cross_ph": true,
+   "binder_seq": "MKEKIEEMIEIVEELLEKHHHPLLVRLLYDLRFMYETQFLNEEALEEIIKILEDLLENEEDIDKEKVKEILEEVKELLEEVKK",
+   "human": {
+    "iptm": 0.9148768186569214,
+    "ipsae": 0.8757,
+    "log10_Ka_ratio_all": 0.178,
+    "anchor_d_carboxylate": 3.94
+   },
+   "mouse": {
+    "iptm": 0.8509182333946228,
+    "ipsae": 0.7556
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l102_750acb8e93f7c6f9",
+   "best": "EGFR_d3_H409_denovo_l102_750acb8e93f7c6f9_candidate6",
+   "rank_score": 1.037,
+   "cross_ph": true,
+   "binder_seq": "SKLEELKEELEEVAKEFEENPKNPDYERLKEVLEELIEYLETEAPEEVKKELLPGVETLKSELEDILSNEDEFYQWLSVPYITKYLKRLIERMEEVIEELKE",
+   "human": {
+    "iptm": 0.927771806716919,
+    "ipsae": 0.9197,
+    "log10_Ka_ratio_all": 0.698,
+    "anchor_d_carboxylate": null
+   },
+   "mouse": {
+    "iptm": 0.8648030161857605,
+    "ipsae": 0.8276
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l98_ed5771ac767d8b60",
+   "best": "EGFR_d3_H409_denovo_l98_ed5771ac767d8b60_candidate6",
+   "rank_score": 1.0181,
+   "cross_ph": false,
+   "binder_seq": "SSLIEKIEELVPKYAEISHSHFSPFYLKALEHMKKGDIEESLDRLAFLLVMDLSLFDLEYAEEKEREWRELREKGDLEGMMELVIEMLEKLIEIFEKN",
+   "human": {
+    "iptm": 0.9467374086380005,
+    "ipsae": 0.9331,
+    "log10_Ka_ratio_all": -0.15,
+    "anchor_d_carboxylate": 3.35
+   },
+   "mouse": {
+    "iptm": 0.8440728783607483,
+    "ipsae": 0.7514
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l119_92069a953b521353",
+   "best": "EGFR_d3_H409_denovo_l119_92069a953b521353_candidate13",
+   "rank_score": 0.934,
+   "cross_ph": true,
+   "binder_seq": "AKKEEEYKRAVMMAELELYDTELLLIYYSDFNTEELKKLKEKVKELKELLERMREGDMEAVKEAIKLLDEMLELLEKQIEEYEKLAKQGSEKAKEALEFYKKLKEHVEKMKELFEKMAE",
+   "human": {
+    "iptm": 0.8713332414627075,
+    "ipsae": 0.8444,
+    "log10_Ka_ratio_all": 0.664,
+    "anchor_d_carboxylate": 4.39
+   },
+   "mouse": {
+    "iptm": 0.8083779215812683,
+    "ipsae": 0.7348
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l109_90db780a466d17bf",
+   "best": "EGFR_d3_H409_denovo_l109_90db780a466d17bf_candidate3",
+   "rank_score": 0.9298,
+   "cross_ph": true,
+   "binder_seq": "SLPYQVMKLKYDLQFSLEIEDFSKEVLELHLKQIDEILKLFEETPEYKENPEIKKLMEELKKIKEELEKKLKEGTLSEEEAKKYYEEVLKLLEELIPLLRKIEEEKQKK",
+   "human": {
+    "iptm": 0.9161592125892639,
+    "ipsae": 0.9022,
+    "log10_Ka_ratio_all": 0.267,
+    "anchor_d_carboxylate": 4.24
+   },
+   "mouse": {
+    "iptm": 0.8798837065696716,
+    "ipsae": 0.8497
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l117_7f11b0bb5107fb2a",
+   "best": "EGFR_d3_H409_denovo_l117_7f11b0bb5107fb2a_candidate3",
+   "rank_score": 0.8804,
+   "cross_ph": false,
+   "binder_seq": "MKELAERIYERYVAMAQKMTEVLSDEIFHKLTFLSLYADVVLRWALRHQTPEALERAIRELERLRKEMEEIVKELEEKLPSLDEEEAEKAKKEIEFLREQIETIEEIIEELRKLKEL",
+   "human": {
+    "iptm": 0.9337438344955444,
+    "ipsae": 0.9277,
+    "log10_Ka_ratio_all": -0.01,
+    "anchor_d_carboxylate": 4.27
+   },
+   "mouse": {
+    "iptm": 0.8904895782470703,
+    "ipsae": 0.8471
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l107_0e0c27919efc6fd3",
+   "best": "EGFR_d3_H409_denovo_l107_0e0c27919efc6fd3_candidate24",
+   "rank_score": 0.8653,
+   "cross_ph": true,
+   "binder_seq": "SEEEEIKKKLEELFEKLEKAVNKAVEAHKNHTWSEKKPEVDKEWNEVYEEMKKFAKELKGKYTVEEIYDILYEKFKEKYKDQPELVYFFEWFRYEWRLRELGEQMKP",
+   "human": {
+    "iptm": 0.9189924001693726,
+    "ipsae": 0.9015,
+    "log10_Ka_ratio_all": 0.384,
+    "anchor_d_carboxylate": 2.93
+   },
+   "mouse": {
+    "iptm": 0.8039572834968567,
+    "ipsae": 0.7168
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l94_33634cd06e147118",
+   "best": "EGFR_d3_H409_denovo_l94_33634cd06e147118_candidate22",
+   "rank_score": 0.8642,
+   "cross_ph": false,
+   "binder_seq": "DLEERKKEIVEEYERKLKEFEEKIKELSKVADKESLEKLEIEFLHFWLTGGVLVERLKRARTEPRFEHLVGMLEEEIAKLEKKIDEVKKEAEEK",
+   "human": {
+    "iptm": 0.9275990128517151,
+    "ipsae": 0.9044,
+    "log10_Ka_ratio_all": -0.544,
+    "anchor_d_carboxylate": 7.26
+   },
+   "mouse": {
+    "iptm": 0.890946090221405,
+    "ipsae": 0.8309
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l96_1e06bdb31f1d6468",
+   "best": "EGFR_d3_H409_denovo_l96_1e06bdb31f1d6468_candidate1",
+   "rank_score": 0.8261,
+   "cross_ph": false,
+   "binder_seq": "DEKAKELIGRFVERLYEEFGATSRFARSLYEKYEERKHLPAEWWEKVLLYDFRFLYQVHQDPFYKKLVEVLEKPGSIEDRLKELEKLFEEEVEKKK",
+   "human": {
+    "iptm": 0.9414058327674866,
+    "ipsae": 0.9367,
+    "log10_Ka_ratio_all": -0.256,
+    "anchor_d_carboxylate": 4.01
+   },
+   "mouse": {
+    "iptm": 0.8581065535545349,
+    "ipsae": 0.7928
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l99_edc758020760bef6",
+   "best": "EGFR_d3_H409_denovo_l99_edc758020760bef6_candidate4",
+   "rank_score": 0.8134,
+   "cross_ph": true,
+   "binder_seq": "KLEELLEKLEKLIEEAEKKSKLNKRTLFFYIVRSKQFIEHMKKAKTKEEQIEALREYVEFVEEQLRMEKLMQVKWTEEEKEFKKKLEEIIEELKKLIEE",
+   "human": {
+    "iptm": 0.9468004107475281,
+    "ipsae": 0.9358,
+    "log10_Ka_ratio_all": 0.005,
+    "anchor_d_carboxylate": 4.22
+   },
+   "mouse": {
+    "iptm": 0.8843544721603394,
+    "ipsae": 0.8119
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l104_c14d3ab5068c823b",
+   "best": "EGFR_d3_H409_denovo_l104_c14d3ab5068c823b_candidate21",
+   "rank_score": 0.7571,
+   "cross_ph": false,
+   "binder_seq": "SKIKELVEEMYKALMNLHKDWDKKVEEIKRKAEELLEELESIPEEELSEQEKEILKQVKELLEKLKKYEEEYAKATEDEQDVLKFELDLVLYEGVHRLMELVHK",
+   "human": {
+    "iptm": 0.9023256897926331,
+    "ipsae": 0.8918,
+    "log10_Ka_ratio_all": -0.274,
+    "anchor_d_carboxylate": 2.72
+   },
+   "mouse": {
+    "iptm": 0.8315542340278625,
+    "ipsae": 0.7571
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l107_8710d25e820df4ad",
+   "best": "EGFR_d3_H409_denovo_l107_8710d25e820df4ad_candidate22",
+   "rank_score": 0.7242,
+   "cross_ph": true,
+   "binder_seq": "DPKRVLEFFRELLDLTKKFLLELSEKFPELKSKAEEFLKKVEELEKRVEELEKTGPTKEQLEELLRELEELHEEIISEFMDKDPLAIFQYDYEVRVLLRRIRWLLRE",
+   "human": {
+    "iptm": 0.9085810780525208,
+    "ipsae": 0.9017,
+    "log10_Ka_ratio_all": 0.052,
+    "anchor_d_carboxylate": 3.79
+   },
+   "mouse": {
+    "iptm": 0.8009896874427795,
+    "ipsae": 0.7086
+   }
+  },
+  {
+   "backbone": "EGFR_d3_H409_denovo_l99_92b494f3687e94f1",
+   "best": "EGFR_d3_H409_denovo_l99_92b494f3687e94f1_candidate2",
+   "rank_score": 0.7073,
+   "cross_ph": false,
+   "binder_seq": "MSVLEKFKKMVEEFIEKVEKKSLTIEFLEEVLEFLKEIVPKIMDTLDDETAHKVFELSMEIDYMLKMLILLLREKRYEEAEELAKELAEKLKEMLKILE",
+   "human": {
+    "iptm": 0.9485592842102051,
+    "ipsae": 0.9319,
+    "log10_Ka_ratio_all": -0.501,
+    "anchor_d_carboxylate": 4.46
+   },
+   "mouse": {
+    "iptm": 0.8189330697059631,
+    "ipsae": 0.7073
+   }
+  }
+ ]
+}
