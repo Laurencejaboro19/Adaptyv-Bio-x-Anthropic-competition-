@@ -19,9 +19,10 @@ BindCraft2 (design) -> Boltz-2 (refold, source of truth) -> PROPKA3 + Wyman link
 
 ```
 egfr/
-  modal/      Modal apps and the two EGFR target PDBs they load (keep them in the same folder as the scripts)
-  scoring/    score_ph_switch.py (PROPKA3 wrapper, Wyman linkage, His geometry) and epitope analysis
-  configs/    BindCraft2 campaign JSONs, controller config, measured funnel and cost records
+  modal/      egfr_dual10.py (design + Boltz-2 refold + PROPKA controller), modal_bc2_dual.py (design shards only),
+              and the two EGFR target PDBs they load (keep them in the same folder as the scripts)
+  scoring/    score_ph_switch.py (PROPKA3 wrapper, Wyman linkage, His geometry), runs offline on any complex
+  configs/    BindCraft2 campaign JSONs, controller config, measured funnel and cost records (reference)
   notes/      EGFR_methodology.md
 tnf/
   modal/      tnf_app.py (Modal app), tnf_client.py (launcher), tnf_smoke.py, and the four TNF-alpha target PDBs
@@ -74,7 +75,21 @@ Step 5: download results when shards are done. What you should see next: an `egf
 python -m modal volume get pdfa-bc2-results egfr_dual .\results
 ```
 
-After this, refold the candidates with Boltz-2 (`modal_bc2_egfr_refold.py`) and score the pH switch with `egfr/scoring/score_ph_switch.py`. The stage-2 controller `egfr_dual10_stage2_controller.py` automates design, refold and scoring with a budget cap (`BUDGET_USD` inside it).
+Step 6 (alternative to Steps 3 to 5): the full controller. What it does: runs design shards, refolds every candidate with Boltz-2 on human and mouse, scores the pH switch with PROPKA3 and Wyman linkage, and writes a ranked table. It stops at the budget you give it, and the default budget inside the script is $150, so always pass `--budget`. What you should see next: `CONTROLLER STARTED IN THE CLOUD`, a call id and the tag. You can then close PowerShell.
+
+```powershell
+python -m modal run --detach egfr_dual10.py::start --tag dual10 --goal 10 --budget 40
+python -m modal run egfr_dual10.py::status --tag dual10
+python -m modal run egfr_dual10.py::fetch --tag dual10
+```
+
+`status` prints the progress JSON, or `no progress file yet` early on. `fetch` downloads the ranked designs table.
+
+Step 7 (optional, offline, no GPU): score the pH switch on any predicted complex. What you should see next: one JSON line with the interface histidines, the PROPKA linkage values and the anchor-residue pKa in the complex versus free. Needs `pip install biopython numpy propka`. Run from the repo root.
+
+```powershell
+python egfr\scoring\score_ph_switch.py complex.cif --target A --binder B --target-offset 304 --anchor 409
+```
 
 ### TNF-alpha
 
@@ -129,7 +144,8 @@ python tnf_client.py fetch --tag tnf
 
 ## Notes and caveats
 
-- Third-party tools are not included and must be obtained under their own licences: BindCraft2, Boltz-2, ProteinMPNN and PROPKA. Some Modal scripts read an adapter path from the `RB_ADAPTER_DIR` environment variable.
+- Third-party tools are not included and must be obtained under their own licences: BindCraft2, Boltz-2, ProteinMPNN and PROPKA. The Modal apps install them in the cloud image.
+- Only scripts that load on their own are included. I imported every Modal script with the Modal client and checked that each app defines its functions, and I ran `score_ph_switch.py` on a real predicted complex. The Modal pipelines have not been run end to end from here, so do the cheap self-check and smoke test first.
+- Earlier EGFR scripts (the first design shards, the first refold script, a campaign controller and a results-ingest script) depended on files in a private repository or on one person's local paths, so they are not included. `modal_bc2_dual.py` supersedes the first EGFR design script. The Stage 1 numbers in the notes came from those earlier scripts.
 - The notes in `egfr/notes/` and `tnf/notes/` are the methodology texts as submitted.
-- The EGFR scripts in `egfr/modal/` are the versions kept in the submission bundle (see its manifest) plus the dual-species stage-2 pipeline. `modal_bc2_dual.py` supersedes `modal_bc2_egfr.py` for the dual campaign.
-- Scripts mentioned in the notes that are not in this repository (for example `bc2_campaigns.py`, `refold_multichain.py` and `bc2_submission.py`) live in a separate private repo.
+- Scripts mentioned in the TNF notes that are not in this repository (for example `bc2_campaigns.py`, `refold_multichain.py` and `bc2_submission.py`) live in a separate private repo.
