@@ -6,6 +6,7 @@ Code, configs and notes from Protein Design for Africa (PDFA) for the Anthropic 
 |---|---|---|
 | 1 | EGFR, conditional (pH-switch) binder, human and mouse | [`egfr/`](egfr/) |
 | 2 | TNF-alpha, conditional (pH-switch) binder, human and mouse | [`tnf/`](tnf/) |
+| 3 | GLP1R agonist, BoltzProt-1 side test (PowerShell only) | [`glp1r_boltzprot1/`](glp1r_boltzprot1/) |
 
 The design approach for both is in [`DESIGN_STRATEGY.md`](DESIGN_STRATEGY.md).
 
@@ -27,6 +28,9 @@ egfr/
 tnf/
   modal/      tnf_app.py (Modal app), tnf_client.py (launcher), tnf_smoke.py, and the four TNF-alpha target PDBs
   notes/      methodology, configs and design/validation notes
+glp1r_boltzprot1/
+  01_get_designed_sequences.ps1, 02_download_refolds_and_contact_check.ps1, 03_ipsae_on_contact_passes.ps1,
+  README.md with run order, timings, expected output and why each block works (Challenge 3, BoltzProt-1 only)
 ```
 
 ## How to run (PowerShell, in this order)
