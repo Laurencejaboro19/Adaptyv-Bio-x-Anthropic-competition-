@@ -7,7 +7,7 @@ Code, configs and notes from Protein Design for Africa (PDFA) for the Anthropic 
 | 1 | EGFR, conditional (pH-switch) binder, human and mouse | [`egfr/`](egfr/) |
 | 2 | TNF-alpha, conditional (pH-switch) binder, human and mouse | [`tnf/`](tnf/) |
 | 3 | GLP1R agonist, BoltzProt-1 side test (PowerShell only) | [`glp1r_boltzprot1/`](glp1r_boltzprot1/) |
-| 3 | GLP1R agonist, BindCraft2 -> Boltz-2 -> ipSAE on Modal (bridge, 30-50 aa) | [`glp1r_bc2/`](glp1r_bc2/) |
+| 3 | GLP1R agonist, BindCraft2 -> Boltz-2 -> ipSAE on Modal (bridge 30-50 aa, deep 35-60 aa) | [`glp1r_bc2/`](glp1r_bc2/) |
 
 The design approach for both is in [`DESIGN_STRATEGY.md`](DESIGN_STRATEGY.md).
 
@@ -34,7 +34,7 @@ glp1r_boltzprot1/
   README.md with run order, timings, expected output and why each block works (Challenge 3, BoltzProt-1 only)
 glp1r_bc2/
   glp1r_app.py (Modal app: BindCraft2 design, Boltz-2 refold, ipSAE + contact check, spend-capped controller),
-  00_modal_login.ps1 ... 06_fetch_csv_and_good_designs.ps1, README.md with run order, timings, expected output (bridge only)
+  00_modal_login.ps1 ... 07_good_designs_one_csv.ps1, README.md with run order, timings, expected output (bridge and deep, no sequences)
 ```
 
 ## How to run (PowerShell, in this order)

@@ -3,14 +3,14 @@ Design: BC2 on H100 (bridge 30-50 aa, deep 35-60 aa). Refold: Boltz-2 (open-sour
 Controller runs INSIDE Modal with its own spend cap, so the PC can be switched off.
 Usage (all from the glp1r_modal folder; see README.md for what each one does):
   python -m modal run glp1r_app.py::warm_cache
-  python -m modal run --detach glp1r_app.py::smoke --camp bridge
+  python -m modal run --detach glp1r_app.py::smoke --camp bridge          (or --camp deep)
   python -m modal run --detach glp1r_app.py::start --camp bridge --budget 45
   python -m modal run --detach glp1r_app.py::start --camp bridge --goal 14 --max-shards 40 --per-round 6 --budget 70
+  python -m modal run --detach glp1r_app.py::start --camp deep --goal 10 --max-shards 12 --per-round 4 --budget 25
   python -m modal run glp1r_app.py::status
   python -m modal run glp1r_app.py::logs --tag glp1r_bridge
   python -m modal run glp1r_app.py::inspect_out --tag glp1r_bridge
-  python -m modal run glp1r_app.py::fetch --outdir <folder> --tags glp1r_bridge
-Only the bridge campaign has been run. The deep campaign is in the code but has not been tested.
+  python -m modal run glp1r_app.py::fetch --outdir <folder> --tags "glp1r_bridge,glp1r_deep"
 """
 import csv, glob, io, json, os, pathlib, re, shlex, time
 import modal
@@ -445,10 +445,10 @@ def warm_cache():
 
 @app.local_entrypoint()
 def smoke(camp: str = "bridge"):
-    """1 shard x 20 trajectories, then refold + score whatever it produced (~$1-3). Keep the PC on until it prints.
-    A second run with the same tag resumes the saved state and does nothing: change "glp1r_smoke_" to run it again."""
-    print(controller.remote(camp, "glp1r_smoke_" + camp, 1, 1, 1, 20.0, 3.0, 20))
-    print(read_progress.remote("glp1r_smoke_" + camp))
+    """1 shard x 30 trajectories, then refold + score whatever it produced (~$2-3). Runs in the cloud (spawn), so the PC can be switched off.
+    A second run with the same tag resumes the saved state and does nothing: change "glp1r_smoke4_" to run it again."""
+    print(controller.spawn(camp, "glp1r_smoke4_" + camp, 1, 1, 1, 20.0, 3.0, 30))
+    print(read_progress.remote("glp1r_smoke4_" + camp))
 
 @app.local_entrypoint()
 def start(camp: str = "bridge", budget: float = 40.0, goal: int = 0, max_shards: int = 12,
