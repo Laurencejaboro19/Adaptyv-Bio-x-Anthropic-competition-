@@ -1,4 +1,4 @@
-# Block 5: progress. Reads from Modal, starts no GPU work.
+# Block 5: progress. Reads from Modal, starts no GPU work. Run it whenever you like.
 $env:PYTHONUTF8 = "1"
 $env:PYTHONIOENCODING = "utf-8"
 Set-Location "$env:USERPROFILE\Downloads\TfR1_pdfa"

@@ -1,6 +1,5 @@
-# Block 2: apply the run settings, write the hotspot/coldspot file, and upload + validate the targets in Modal.
-# Needs, in $env:USERPROFILE\Downloads\TfR1_pdfa : tfr1_app.py, and the folder tfr1_inputs with the two cropped apical PDBs and two cropped MSAs.
-# Replace the $json text with your own spots.json (format in README.md). It is not published here while the challenge is open.
+# Block 4: final settings, hotspot/coldspot file, target upload, and the real run (detached; wait for CONTROLLER STARTED IN THE CLOUD before switching the PC off).
+# Replace the $json text with your own spots.json (format in README.md). The residue numbers are not published here while the challenge is open.
 $d = "$env:USERPROFILE\Downloads\TfR1_pdfa"
 $f = "$d\tfr1_app.py"
 $t = Get-Content $f -Raw
@@ -13,3 +12,4 @@ $json = '<PASTE YOUR spots.json TEXT HERE, ON ONE LINE>'
 [System.IO.File]::WriteAllText("$d\tfr1_inputs\spots.json", $json, (New-Object System.Text.UTF8Encoding($false)))
 Set-Location $d
 python -m modal run tfr1_app.py::prep
+python -m modal run --detach tfr1_app.py::start --tag tfr1_pB --budget 70 --goal 24
