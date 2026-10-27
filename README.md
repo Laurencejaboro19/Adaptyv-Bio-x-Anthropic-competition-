@@ -8,6 +8,7 @@ Code, configs and notes from Protein Design for Africa (PDFA) for the Anthropic 
 | 2 | TNF-alpha, conditional (pH-switch) binder, human and mouse | [`tnf/`](tnf/) |
 | 3 | GLP1R agonist, BoltzProt-1 side test (PowerShell only) | [`glp1r_boltzprot1/`](glp1r_boltzprot1/) |
 | 3 | GLP1R agonist, BindCraft2 -> Boltz-2 -> ipSAE on Modal (bridge 30-50 aa, deep 35-60 aa) | [`glp1r_bc2/`](glp1r_bc2/) |
+| 4 | TfR1, RFD4-Proteina generator on Modal (install, smoke test, design, read outputs; no scoring yet) | [`tfr1_rfd4/`](tfr1_rfd4/) |
 
 The design approach for both is in [`DESIGN_STRATEGY.md`](DESIGN_STRATEGY.md).
 
@@ -35,6 +36,8 @@ glp1r_boltzprot1/
 glp1r_bc2/
   glp1r_app.py (Modal app: BindCraft2 design, Boltz-2 refold, ipSAE + contact check, spend-capped controller),
   00_modal_login.ps1 ... 07_good_designs_one_csv.ps1, README.md with run order, timings, expected output (bridge and deep, no sequences)
+tfr1_rfd4/
+  rfd4_app.py (Modal app: RFD4-Proteina install, weights, smoke test, design, fetch), 01_write_app_and_setup.ps1 ... 06_sequences_and_chains.ps1, README.md (generator only; no sequences or scores)
 ```
 
 ## How to run (PowerShell, in this order)
