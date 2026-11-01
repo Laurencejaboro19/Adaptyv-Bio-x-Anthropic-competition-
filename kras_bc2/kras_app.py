@@ -695,3 +695,329 @@ def rescore_get(outdir: str, tag: str = "kras_rescore1"):
         print("%-4s %-4s %-6s %-6s %-6s %-6s %-6s %-7s %-7s %-6s" % (x["rank"], x["binder_len"], x["g_iptm"], x["g_ipsae"],
               x["wt_ipsae"], x["pf_ipsae"], x["delta_mean"], x["delta_worst"], x["pep_delta"], x["g_asp6_min"]))
     print("saved:", out / (tag + ".csv"))
+
+
+# ============================ PROTEINMPNN ROUND (appended) ============================
+# Seeds (chosen designs) -> Boltz-2 refold on G12D to get a backbone -> ProteinMPNN redesigns binder chain D against the
+# fixed target chains -> every variant refolded on G12D, WT and PF (stage 1) -> best ones rescored with more samples (stage 2).
+MPNN_DIR = "/opt/ProteinMPNN"
+mpnn_image = (
+    modal.Image.debian_slim(python_version="3.11")
+    .apt_install("git")
+    .pip_install("torch", index_url="https://download.pytorch.org/whl/cpu")
+    .pip_install("numpy", "gemmi==0.6.5")
+    .run_commands("git clone https://github.com/dauparas/ProteinMPNN.git /opt/ProteinMPNN && "
+                  "git -C /opt/ProteinMPNN checkout 8907e66")
+    .env({"PYTHONUNBUFFERED": "1"}))
+
+
+@app.function(image=boltz_image, gpu="L40S", timeout=3600, volumes={"/cache": bcache})
+def backbone_fold(binder: str, design_id: str, camp: str, n: int) -> dict:
+    """Refold one binder on G12D with n samples and return the CIF of the sample with the best ipSAE (the backbone to redesign)."""
+    import numpy as np
+    for p in MSA.values():
+        if not os.path.exists(p): raise RuntimeError("MSA missing - run warm_cache first")
+    r, out = _boltz(yaml_for("G12D", binder), ["--recycling_steps", "3", "--sampling_steps", "100"], n)
+    best = None
+    for i in range(n):
+        cif = sorted(glob.glob(str(out / "**" / ("*model_%d.cif" % i)), recursive=True))
+        pae = sorted(glob.glob(str(out / "**" / ("pae*model_%d.npz" % i)), recursive=True))
+        if not (cif and pae): continue
+        per, _ = ipsae_by_chain(np.load(pae[0])["pae"], cif[0], "G12D", len(binder))
+        sc = max(per.values())
+        if best is None or sc > best["ipsae"]:
+            best = {"design_id": design_id, "sample": i, "ipsae": round(sc, 4), "cif_text": open(cif[0]).read()}
+    if best is None: raise RuntimeError("no Boltz output: " + (r.stdout + r.stderr)[-500:])
+    return best
+
+
+@app.function(image=mpnn_image, cpu=4.0, timeout=1800)
+def mpnn_design(cif_text: str, native: str, per_temp: int, temps: str, seed: int) -> list:
+    """ProteinMPNN on binder chain D of a predicted complex, target chains fixed. Returns [{seq, T, score, recovery}]."""
+    import gemmi, subprocess, tempfile
+    work = pathlib.Path(tempfile.mkdtemp()); cif = work / "c.cif"; cif.write_text(cif_text)
+    st = gemmi.read_structure(str(cif)); st.remove_hydrogens()
+    ch = {c.name: c for c in st[0]}
+    if "D" not in ch: raise RuntimeError("no chain D, chains=" + ",".join(ch))
+    got = gemmi.one_letter_code([r.name for r in ch["D"]])
+    if got != native: raise RuntimeError("chain D sequence differs from the binder: " + got[:25])
+    pdb = work / "c.pdb"; st.write_pdb(str(pdb)); outd = work / "out"
+    cmd = ["python", "protein_mpnn_run.py", "--pdb_path", str(pdb), "--pdb_path_chains", "D", "--out_folder", str(outd),
+           "--num_seq_per_target", str(per_temp), "--sampling_temp", temps, "--seed", str(seed), "--batch_size", "1",
+           "--omit_AAs", "CX", "--suppress_print", "1"]
+    r = subprocess.run(cmd, cwd=MPNN_DIR, capture_output=True, text=True)
+    fa = outd / "seqs" / "c.fa"
+    if not fa.exists(): raise RuntimeError("ProteinMPNN failed: " + (r.stdout + r.stderr)[-600:])
+    recs, hdr = [], None
+    for line in fa.read_text().splitlines():
+        if line.startswith(">"): hdr = line[1:]
+        elif hdr is not None:
+            m = re.search(r"T=([0-9.]+), sample=(\d+), score=([0-9.]+).*seq_recovery=([0-9.]+)", hdr)
+            if m: recs.append({"seq": line.strip(), "T": float(m.group(1)), "score": float(m.group(3)), "recovery": float(m.group(4))})
+            hdr = None
+    return recs
+
+
+def _ident(a, b):
+    return round(sum(1 for x, y in zip(a, b) if x == y) / len(a), 3) if len(a) == len(b) else 0.0
+
+
+def _score(row):
+    return (row["delta_mean"] + row["delta_worst"]) / 2
+
+
+MPNN_KEYS = ["rank", "parent", "is_parent", "design_id", "mpnn_T", "identity_to_parent", "binder_len", "sequence", "stage1_score",
+             "score", "g_iptm", "g_ipsae", "g_ipsae_min", "g_ipsae_max", "g_pep", "g_asp6_min", "g_asp6_med",
+             "wt_iptm", "wt_ipsae", "wt_ipsae_max", "wt_pep", "wt_asp6_min", "pf_iptm", "pf_ipsae", "pf_ipsae_max",
+             "delta_mean", "delta_worst", "pep_delta", "g_n", "error"]
+
+
+def _write_csv(path, rows):
+    b = io.StringIO(); w = csv.DictWriter(b, fieldnames=MPNN_KEYS, extrasaction="ignore"); w.writeheader(); w.writerows(rows)
+    pathlib.Path(path).write_text(b.getvalue())
+
+
+@app.function(image=cpu_image, cpu=2.0, timeout=6 * 3600, volumes={"/results": results})
+def mpnn_ctl(seeds: list, tag: str, per_temp: int, temps: str, keep_per_seed: int, s1_samples: int,
+             s2_top: int, s2_samples: int, max_usd: float, camp: str) -> str:
+    base = pathlib.Path(RESROOT) / tag; base.mkdir(parents=True, exist_ok=True)
+    t0 = time.time(); note = {"spent_est": 0.0}
+    def prog(state, msg=""):
+        (base / "progress.json").write_text(json.dumps({"state": state, "msg": msg, "seeds": [s["name"] for s in seeds],
+            "est_spend_usd": round(note["spent_est"], 2), "cap_usd": max_usd,
+            "elapsed_min": round((time.time() - t0) / 60, 1), "updated": time.strftime("%Y-%m-%d %H:%M:%S")}, indent=1))
+        results.commit()
+    def run_folds(items, n):
+        jobs = [(s, d, k, camp, n) for (d, s) in items for k in KINDS]
+        outs = list(fold_n.starmap(jobs, return_exceptions=True))
+        by = {}
+        for (s, d, k, _, _), o in zip(jobs, outs):
+            if isinstance(o, Exception): o = {"error": repr(o)[:200]}
+            else: note["spent_est"] += o.get("seconds", 0) / 3600 * L40S_USD_H
+            by.setdefault(d, {})[k] = o
+        return {d: rescore_row(d, s, by.get(d, {})) for (d, s) in items}
+
+    prog("backbones")
+    bbs = list(backbone_fold.starmap([(s["sequence"], s["name"], camp, 5) for s in seeds], return_exceptions=True))
+    meta, items = {}, []
+    for s, bb in zip(seeds, bbs):
+        if isinstance(bb, Exception): prog("failed", "backbone fold failed for " + s["name"] + ": " + repr(bb)[:300]); return "failed"
+        note["spent_est"] += 0.5
+        meta[s["name"] + "_parent"] = {"parent": s["name"], "is_parent": "yes", "mpnn_T": "", "identity_to_parent": 1.0, "seq": s["sequence"]}
+        items.append((s["name"] + "_parent", s["sequence"]))
+    prog("mpnn")
+    des = list(mpnn_design.starmap([(bb["cif_text"], s["sequence"], per_temp, temps, 100 + i)
+                                    for i, (s, bb) in enumerate(zip(seeds, bbs))], return_exceptions=True))
+    for s, rec in zip(seeds, des):
+        if isinstance(rec, Exception): prog("failed", "ProteinMPNN failed for " + s["name"] + ": " + repr(rec)[:400]); return "failed"
+        seen, j = {s["sequence"]}, 0
+        for x in rec:
+            if x["seq"] in seen or len(x["seq"]) != len(s["sequence"]): continue
+            seen.add(x["seq"]); j += 1
+            if j > keep_per_seed: break
+            did = "%s_v%02d" % (s["name"], j)
+            meta[did] = {"parent": s["name"], "is_parent": "", "mpnn_T": x["T"], "identity_to_parent": _ident(x["seq"], s["sequence"]), "seq": x["seq"]}
+            items.append((did, x["seq"]))
+    (base / "variants.csv").write_text("design_id,parent,mpnn_T,identity_to_parent,sequence\n" + "\n".join(
+        "%s,%s,%s,%s,%s" % (d, meta[d]["parent"], meta[d]["mpnn_T"], meta[d]["identity_to_parent"], s) for d, s in items))
+    prog("stage1", "%d sequences (incl. %d parents), %d samples each" % (len(items), len(seeds), s1_samples))
+    r1 = run_folds(items, s1_samples)
+    rows1 = []
+    for d, s in items:
+        x = r1[d]; x.update({k: v for k, v in meta[d].items() if k != "seq"}); x["stage1_score"] = None if "error" in x else round(_score(x), 4)
+        rows1.append(x)
+    rows1.sort(key=lambda x: -(x["stage1_score"] if x["stage1_score"] is not None else -9))
+    for i, x in enumerate(rows1, 1): x["rank"] = i
+    _write_csv(base / "stage1_all.csv", rows1)
+    need = (s2_top + len(seeds)) * 3 * 0.05
+    if note["spent_est"] + need > max_usd:
+        prog("stopped", "budget: stage 1 done (est $%.2f), stage 2 skipped; see stage1_all.csv" % note["spent_est"]); return "stopped"
+    ok = [x for x in rows1 if x["stage1_score"] is not None and not x["is_parent"]]
+    ok.sort(key=lambda x: (-(float(x["g_ipsae"]) >= 0.5), -x["stage1_score"]))
+    pick = [x["design_id"] for x in ok[:s2_top]] + [d for d in meta if meta[d]["is_parent"]]
+    seqmap = dict(items)
+    prog("stage2", "%d sequences, %d samples each" % (len(pick), s2_samples))
+    r2 = run_folds([(d, seqmap[d]) for d in pick], s2_samples)
+    s1 = {x["design_id"]: x["stage1_score"] for x in rows1}
+    rows2 = []
+    for d in pick:
+        x = r2[d]; x.update({k: v for k, v in meta[d].items() if k != "seq"}); x["stage1_score"] = s1.get(d)
+        x["score"] = None if "error" in x else round(_score(x), 4); rows2.append(x)
+    rows2.sort(key=lambda x: -(x["score"] if x["score"] is not None else -9))
+    for i, x in enumerate(rows2, 1): x["rank"] = i
+    _write_csv(base / "stage2_all.csv", rows2)
+    top = [x for x in rows2 if not x["is_parent"] and x["score"] is not None and float(x["g_ipsae"]) >= 0.5][:20]
+    for i, x in enumerate(top, 1): x["rank"] = i
+    _write_csv(base / "top20_new.csv", top)
+    prog("done", "est spend $%.2f" % note["spent_est"]); return "done"
+
+
+@app.local_entrypoint()
+def mpnn_start(csv_path: str, tag: str = "kras_mpnn1", n_seeds: int = 2, per_temp: int = 17, temps: str = "0.1 0.2 0.3",
+               keep_per_seed: int = 50, s1_samples: int = 3, s2_top: int = 30, s2_samples: int = 8,
+               max_usd: float = 25.0, camp: str = "set5"):
+    rows = [r for r in csv.DictReader(open(csv_path, encoding="utf-8-sig")) if r.get("sequence")][:n_seeds]
+    seeds = [{"name": "S%d" % (i + 1), "sequence": r["sequence"]} for i, r in enumerate(rows)]
+    n1 = (len(seeds) * keep_per_seed + len(seeds)) * 3; n2 = (s2_top + len(seeds)) * 3
+    bound = (n1 + n2) * 0.05 + 0.5 * len(seeds)
+    print("seeds:", len(seeds), " variants per seed:", keep_per_seed, " stage1 folds:", n1, " stage2 folds:", n2,
+          " rough est up to $%.2f (cap $%.2f)" % (bound, max_usd))
+    if bound > max_usd: raise SystemExit("rough estimate above max_usd; lower the numbers or raise --max-usd")
+    call = mpnn_ctl.spawn(seeds, tag, per_temp, temps, keep_per_seed, s1_samples, s2_top, s2_samples, max_usd, camp)
+    print("PROTEINMPNN ROUND STARTED IN THE CLOUD  tag:", tag, " call id:", call.object_id)
+    print("You can close this window and switch the PC off now. Later run mpnn_get.")
+
+
+@app.local_entrypoint()
+def mpnn_get(outdir: str, tag: str = "kras_mpnn1"):
+    print(read_progress.remote(tag))
+    out = pathlib.Path(outdir); out.mkdir(parents=True, exist_ok=True)
+    for name in ("variants.csv", "stage1_all.csv", "stage2_all.csv", "top20_new.csv"):
+        b = read_file.remote(tag, name)
+        if b: (out / (tag + "_" + name)).write_bytes(b); print("saved", tag + "_" + name)
+    b = read_file.remote(tag, "top20_new.csv")
+    if not b: print("final table not ready yet"); return
+    print("%-4s %-7s %-4s %-5s %-6s %-6s %-6s %-6s %-6s %-7s %-6s %-6s" % ("rank", "parent", "len", "ident", "g_ipt", "g_ips", "wt_ips", "pf_ips", "d_mean", "d_worst", "pep_d", "asp6"))
+    for x in csv.DictReader(io.StringIO(b.decode())):
+        print("%-4s %-7s %-4s %-5s %-6s %-6s %-6s %-6s %-6s %-7s %-6s %-6s" % (x["rank"], x["parent"], x["binder_len"], x["identity_to_parent"],
+              x["g_iptm"], x["g_ipsae"], x["wt_ipsae"], x["pf_ipsae"], x["delta_mean"], x["delta_worst"], x["pep_delta"], x["g_asp6_min"]))
+
+
+MPNN_KEYS_FX = MPNN_KEYS[:5] + ["n_fixed"] + MPNN_KEYS[5:]
+
+
+def _write_csv_fx(path, rows):
+    b = io.StringIO(); w = csv.DictWriter(b, fieldnames=MPNN_KEYS_FX, extrasaction="ignore"); w.writeheader(); w.writerows(rows)
+    pathlib.Path(path).write_text(b.getvalue())
+
+
+# ============================ PROTEINMPNN, ASP6 + HOTSPOT RESIDUES KEPT FIXED (appended) ============================
+@app.function(image=mpnn_image, cpu=4.0, timeout=1800)
+def mpnn_design_hot(cif_text: str, native: str, per_temp: int, temps: str, seed: int, cutoff: float, asp_cutoff: float, hot: str) -> dict:
+    import gemmi, subprocess, tempfile
+    import numpy as np
+    work = pathlib.Path(tempfile.mkdtemp()); cif = work / "c.cif"; cif.write_text(cif_text)
+    st = gemmi.read_structure(str(cif)); st.remove_hydrogens()
+    ch = {c.name: c for c in st[0]}
+    if "D" not in ch or "C" not in ch: raise RuntimeError("need chains C and D, chains=" + ",".join(ch))
+    got = gemmi.one_letter_code([r.name for r in ch["D"]])
+    if got != native: raise RuntimeError("chain D sequence differs from the binder: " + got[:25])
+    hot_idx = [int(x) for x in hot.split(",")]
+    if len(ch["C"]) < max(hot_idx): raise RuntimeError("peptide chain too short")
+    hot_xyz = np.array([a.pos.tolist() for j, r in enumerate(ch["C"], 1) if j in hot_idx for a in r])
+    asp_xyz = np.array([a.pos.tolist() for a in ch["C"][5]])
+    fixed = []
+    for i, r in enumerate(ch["D"], 1):
+        x = np.array([a.pos.tolist() for a in r])
+        near_hot = (np.linalg.norm(x[:, None, :] - hot_xyz[None, :, :], axis=-1) <= cutoff).any()
+        near_asp = (np.linalg.norm(x[:, None, :] - asp_xyz[None, :, :], axis=-1) <= asp_cutoff).any()
+        if near_hot or near_asp: fixed.append(i)
+    pdb = work / "c.pdb"; st.write_pdb(str(pdb)); outd = work / "out"
+    fx = work / "fixed.jsonl"; fx.write_text(json.dumps({"c": {"A": [], "B": [], "C": [], "D": fixed}}) + "\n")
+    cmd = ["python", "protein_mpnn_run.py", "--pdb_path", str(pdb), "--pdb_path_chains", "D", "--out_folder", str(outd),
+           "--num_seq_per_target", str(per_temp), "--sampling_temp", temps, "--seed", str(seed), "--batch_size", "1",
+           "--omit_AAs", "CX", "--fixed_positions_jsonl", str(fx), "--suppress_print", "1"]
+    r = subprocess.run(cmd, cwd=MPNN_DIR, capture_output=True, text=True)
+    fa = outd / "seqs" / "c.fa"
+    if not fa.exists(): raise RuntimeError("ProteinMPNN failed: " + (r.stdout + r.stderr)[-600:])
+    recs, hdr = [], None
+    for line in fa.read_text().splitlines():
+        if line.startswith(">"): hdr = line[1:]
+        elif hdr is not None:
+            m = re.search(r"T=([0-9.]+), sample=(\d+), score=([0-9.]+).*seq_recovery=([0-9.]+)", hdr)
+            if m: recs.append({"seq": line.strip(), "T": float(m.group(1)), "score": float(m.group(3)), "recovery": float(m.group(4))})
+            hdr = None
+    return {"recs": recs, "fixed": fixed}
+
+
+@app.function(image=cpu_image, cpu=2.0, timeout=6 * 3600, volumes={"/results": results})
+def mpnn_ctl_hot(seeds: list, tag: str, per_temp: int, temps: str, keep_per_seed: int, s1_samples: int,
+                s2_top: int, s2_samples: int, max_usd: float, camp: str, cutoff: float, asp_cutoff: float, hot: str) -> str:
+    base = pathlib.Path(RESROOT) / tag; base.mkdir(parents=True, exist_ok=True)
+    t0 = time.time(); note = {"spent_est": 0.0}
+    def prog(state, msg=""):
+        (base / "progress.json").write_text(json.dumps({"state": state, "msg": msg, "seeds": [s["name"] for s in seeds],
+            "est_spend_usd": round(note["spent_est"], 2), "cap_usd": max_usd,
+            "elapsed_min": round((time.time() - t0) / 60, 1), "updated": time.strftime("%Y-%m-%d %H:%M:%S")}, indent=1))
+        results.commit()
+    def run_folds(items, n):
+        jobs = [(s, d, k, camp, n) for (d, s) in items for k in KINDS]
+        outs = list(fold_n.starmap(jobs, return_exceptions=True))
+        by = {}
+        for (s, d, k, _, _), o in zip(jobs, outs):
+            if isinstance(o, Exception): o = {"error": repr(o)[:200]}
+            else: note["spent_est"] += o.get("seconds", 0) / 3600 * L40S_USD_H
+            by.setdefault(d, {})[k] = o
+        return {d: rescore_row(d, s, by.get(d, {})) for (d, s) in items}
+
+    prog("backbones")
+    bbs = list(backbone_fold.starmap([(s["sequence"], s["name"], camp, 5) for s in seeds], return_exceptions=True))
+    meta, items = {}, []
+    for s, bb in zip(seeds, bbs):
+        if isinstance(bb, Exception): prog("failed", "backbone fold failed for " + s["name"] + ": " + repr(bb)[:300]); return "failed"
+        note["spent_est"] += 0.5
+        meta[s["name"] + "_parent"] = {"parent": s["name"], "is_parent": "yes", "mpnn_T": "", "identity_to_parent": 1.0, "n_fixed": "", "seq": s["sequence"]}
+        items.append((s["name"] + "_parent", s["sequence"]))
+    prog("mpnn")
+    des = list(mpnn_design_hot.starmap([(bb["cif_text"], s["sequence"], per_temp, temps, 300 + i, cutoff, asp_cutoff, hot)
+                                          for i, (s, bb) in enumerate(zip(seeds, bbs))], return_exceptions=True))
+    for s, res in zip(seeds, des):
+        if isinstance(res, Exception): prog("failed", "ProteinMPNN failed for " + s["name"] + ": " + repr(res)[:400]); return "failed"
+        seen, j = {s["sequence"]}, 0
+        for x in res["recs"]:
+            if x["seq"] in seen or len(x["seq"]) != len(s["sequence"]): continue
+            seen.add(x["seq"]); j += 1
+            if j > keep_per_seed: break
+            did = "%s_h%02d" % (s["name"], j)
+            meta[did] = {"parent": s["name"], "is_parent": "", "mpnn_T": x["T"], "identity_to_parent": _ident(x["seq"], s["sequence"]),
+                         "n_fixed": len(res["fixed"]), "seq": x["seq"]}
+            items.append((did, x["seq"]))
+    (base / "variants.csv").write_text("design_id,parent,mpnn_T,identity_to_parent,n_fixed,sequence\n" + "\n".join(
+        "%s,%s,%s,%s,%s,%s" % (d, meta[d]["parent"], meta[d]["mpnn_T"], meta[d]["identity_to_parent"], meta[d]["n_fixed"], s) for d, s in items))
+    prog("stage1", "%d sequences (incl. %d parents), %d samples each" % (len(items), len(seeds), s1_samples))
+    r1 = run_folds(items, s1_samples)
+    rows1 = []
+    for d, s in items:
+        x = r1[d]; x.update({k: v for k, v in meta[d].items() if k != "seq"}); x["stage1_score"] = None if "error" in x else round(_score(x), 4)
+        rows1.append(x)
+    rows1.sort(key=lambda x: -(x["stage1_score"] if x["stage1_score"] is not None else -9))
+    for i, x in enumerate(rows1, 1): x["rank"] = i
+    _write_csv_fx(base / "stage1_all.csv", rows1)
+    need = (s2_top + len(seeds)) * 3 * 0.05
+    if note["spent_est"] + need > max_usd:
+        prog("stopped", "budget: stage 1 done (est $%.2f), stage 2 skipped; see stage1_all.csv" % note["spent_est"]); return "stopped"
+    ok = [x for x in rows1 if x["stage1_score"] is not None and not x["is_parent"]]
+    ok.sort(key=lambda x: (-(float(x["g_ipsae"]) >= 0.5), -x["stage1_score"]))
+    pick = [x["design_id"] for x in ok[:s2_top]] + [d for d in meta if meta[d]["is_parent"]]
+    seqmap = dict(items)
+    prog("stage2", "%d sequences, %d samples each" % (len(pick), s2_samples))
+    r2 = run_folds([(d, seqmap[d]) for d in pick], s2_samples)
+    s1 = {x["design_id"]: x["stage1_score"] for x in rows1}
+    rows2 = []
+    for d in pick:
+        x = r2[d]; x.update({k: v for k, v in meta[d].items() if k != "seq"}); x["stage1_score"] = s1.get(d)
+        x["score"] = None if "error" in x else round(_score(x), 4); rows2.append(x)
+    rows2.sort(key=lambda x: -(x["score"] if x["score"] is not None else -9))
+    for i, x in enumerate(rows2, 1): x["rank"] = i
+    _write_csv_fx(base / "stage2_all.csv", rows2)
+    top = [x for x in rows2 if not x["is_parent"] and x["score"] is not None and float(x["g_ipsae"]) >= 0.5][:20]
+    for i, x in enumerate(top, 1): x["rank"] = i
+    _write_csv_fx(base / "top20_new.csv", top)
+    prog("done", "est spend $%.2f" % note["spent_est"]); return "done"
+
+
+@app.local_entrypoint()
+def mpnn_hot_start(csv_path: str, rows: str = "1,2", tag: str = "kras_mpnn3", per_temp: int = 17, temps: str = "0.1 0.15 0.2",
+                  keep_per_seed: int = 50, s1_samples: int = 3, s2_top: int = 30, s2_samples: int = 8,
+                  max_usd: float = 25.0, camp: str = "set5", cutoff: float = 5.0, asp_cutoff: float = 7.0, hot: str = "4,5,6,7,8"):
+    allrows = [r for r in csv.DictReader(open(csv_path, encoding="utf-8-sig")) if r.get("sequence")]
+    want = [int(x) for x in rows.split(",")]
+    seeds = [{"name": "S%d" % n, "sequence": allrows[n - 1]["sequence"]} for n in want]
+    n1 = (len(seeds) * keep_per_seed + len(seeds)) * 3; n2 = (s2_top + len(seeds)) * 3
+    bound = (n1 + n2) * 0.05 + 0.5 * len(seeds)
+    print("seeds (CSV rows):", rows, " variants per seed:", keep_per_seed, " fixed = binder residues within", cutoff, "A of peptide residues", hot, "or within", asp_cutoff, "A of residue 6 (Asp6)",
+          " stage1 folds:", n1, " stage2 folds:", n2, " rough est up to $%.2f (cap $%.2f)" % (bound, max_usd))
+    if bound > max_usd: raise SystemExit("rough estimate above max_usd; lower the numbers or raise --max-usd")
+    call = mpnn_ctl_hot.spawn(seeds, tag, per_temp, temps, keep_per_seed, s1_samples, s2_top, s2_samples, max_usd, camp, cutoff, asp_cutoff, hot)
+    print("PROTEINMPNN (HOTSPOT + ASP6 FIXED) STARTED IN THE CLOUD  tag:", tag, " call id:", call.object_id)
+    print("You can close this window and switch the PC off now. Later run mpnn_get --tag", tag)

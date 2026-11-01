@@ -59,3 +59,9 @@ Throughput seen: about 10 minutes per trajectory with three targets, about $0.66
 - BindCraft2 commit pinned to 301efdd1937fb963cc40a5b0ecc1bc2f9b2b2d15.
 - A random non-binder once scored ipSAE 0.375 on WT in 1 of 3 samples, so ipSAE has noise at this level.
 - Rotate any API key that was ever pasted in a chat.
+
+## ProteinMPNN redesign of the two seed designs (kras_mpnn3)
+
+- `kras_app.py` now includes the ProteinMPNN round: `mpnn_hot_start` freezes the binder residues within 5 A of peptide residues 4-8 and within 7 A of Asp6, redesigns the rest at temperatures 0.1/0.15/0.2, refolds every variant plus both parents on all three targets with Boltz-2 (3 samples, then 8 samples for the top 30), and scores ipSAE. `mpnn_get` downloads the tables.
+- `14_working_steps_mpnn_pool_final20.ps1` pools every run, removes duplicate sequences (the most-sampled file wins), ranks by G12D ipSAE minus the worse of WT and peptide-free (`d_worst`), and writes the final 20. The launch line is commented out because it needs the ranked CSV you used.
+- Result: the redesigned variants mostly did not beat their parents on strict specificity. The run cost an estimated $16.18 on a $25 cap. Sequences are not committed.
