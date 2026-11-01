@@ -10,6 +10,7 @@ Code, configs and notes from Protein Design for Africa (PDFA) for the Anthropic 
 | 3 | GLP1R agonist, BindCraft2 -> Boltz-2 -> ipSAE on Modal (bridge 30-50 aa, deep 35-60 aa) | [`glp1r_bc2/`](glp1r_bc2/) |
 | 4 | TfR1, RFD4-Proteina generator on Modal (install, smoke test, design, read outputs; no scoring yet) | [`tfr1_rfd4/`](tfr1_rfd4/) |
 | 4 | TfR1, BindCraft2 -> Boltz-2 -> ipSAE -> PROPKA on Modal (PowerShell blocks; sequences and hotspots withheld until the challenge closes) | [`tfr1_bc2/`](tfr1_bc2/) |
+| 5 | KRAS G12D / HLA-A*11:01, BindCraft2 -> Boltz-2 -> ipSAE on Modal (bind G12D, avoid wild-type and peptide-free; blocks, configs, run log; no sequences) | [`kras_bc2/`](kras_bc2/) |
 
 The design approach for both is in [`DESIGN_STRATEGY.md`](DESIGN_STRATEGY.md).
 

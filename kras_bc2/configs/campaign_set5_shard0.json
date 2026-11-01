@@ -1,0 +1,75 @@
+{
+  "campaign_name": "KRAS_set5",
+  "modality": "binder",
+  "project_folder": "/tmp/bc2_project",
+  "campaign_seed": 7401,
+  "targets": [
+    {
+      "name": "G12D",
+      "target_path": "/inputs/target_G12D_ABC.pdb",
+      "chains": "A,B,C",
+      "hotspots": "C4,C5,C6,C7,C8",
+      "coldspots": "A183-276,B1-99",
+      "objective": "target",
+      "weight": 1.0
+    },
+    {
+      "name": "WT",
+      "target_path": "/inputs/avoid_wildtype_ABC.pdb",
+      "chains": "A,B,C",
+      "hotspots": "C4,C5,C6,C7,C8",
+      "objective": "detarget",
+      "weight": -0.3
+    },
+    {
+      "name": "PEPFREE",
+      "target_path": "/inputs/avoid_peptide_free_AB.pdb",
+      "chains": "A,B",
+      "hotspots": "",
+      "objective": "detarget",
+      "weight": -1.0
+    }
+  ],
+  "binder_lengths": [
+    60,
+    100
+  ],
+  "number_of_final_designs": 999,
+  "max_trajectories": 30,
+  "desperation_trajectories": 40,
+  "sequence_candidates": 30,
+  "forced_targeting": false,
+  "termini_accessible": false,
+  "aa_bias": {
+    "C": 0
+  },
+  "min_plddt_screen": 0.3,
+  "min_plddt_refine": 0.3,
+  "min_iptm_final": 0.3,
+  "min_monomer_plddt_final": 0.3,
+  "max_coldspot_contact_final": 0.1,
+  "max_detarget_iptm_screen": 0.75,
+  "max_detarget_iptm_refine": 0.75,
+  "max_detarget_iptm_anneal": 0.75,
+  "max_detarget_iptm_harden": 0.75,
+  "max_detarget_iptm_mutate": 0.75,
+  "max_detarget_iptm_final": 0.75,
+  "max_detarget_interface_residues_final": 30,
+  "filters": {
+    "Interface_Residues": {
+      "threshold": 10,
+      "higher": true
+    }
+  },
+  "workers_per_gpu": 2,
+  "min_plddt_anneal": 0.3,
+  "min_plddt_harden": 0.3,
+  "min_plddt_mutate": 0.3,
+  "min_plddt_final": 0.3,
+  "min_iptm_anneal": 0.3,
+  "min_iptm_harden": 0.3,
+  "min_iptm_mutate": 0.3,
+  "min_ptm_final": 0.3,
+  "max_ipae_final": 0.7,
+  "min_hotspot_contact_final": 0.3
+}
