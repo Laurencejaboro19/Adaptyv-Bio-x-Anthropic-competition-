@@ -18,6 +18,10 @@ No design sequences, API keys or run outputs are in this folder.
 | `06_topup_cap60.ps1` | Resume the same tag with a $60 total cap | ran: 14 shards, 74 designs, est $53.57, 0 passed tier A/B |
 | `07_fetch_results.ps1` | Download `designs.csv`, show top rows | ran |
 | `08_stop_app.ps1` | Stop a Modal app | ran once (kras_set4) |
+| `09_pool_and_rank_top20.ps1` | Pool set2 + set5 (106 designs), keep G12D ipSAE >= 0.5, rank by gap to the worse avoid target | ran |
+| `10_rescore_top20_detached.ps1` | Cloud rescore of the top 20, 8 samples per target, adds peptide-chain ipSAE and per-sample spread | ran, est $2.72 |
+| `11_rescore_get.ps1` | Download a rescore | ran |
+| `12_rescore_rest_and_final_top20.ps1` | Rescore the other 45, then merge and pick the final 20 | ran |
 | `09_select_top20.ps1` | Pool set2 + set5, rank by G12D-minus-worst-avoid ipSAE gap, save top 20 | ran |
 | `10_rescore_top20_detached.ps1` | Detached rescore of the top 20 on all 3 targets, 8 samples, adds peptide-chain ipSAE and Asp6 distance | ran, 8.8 min, est $2.72 |
 | `11_rescore_get.ps1` | Check and download a rescore run | ran |
@@ -27,7 +31,7 @@ No design sequences, API keys or run outputs are in this folder.
 | `configs/campaign_set5_shard0.json` | The exact BindCraft2 campaign JSON for set5 (campaign() merged with LOOSE), shard 0 | generated from `kras_app.py` |
 | `inputs/` | The 3 target PDBs | see below |
 
-Note on `kras_app.py`: the file you run on the PC was written by a PowerShell here-string and then patched in place several times. This copy was rebuilt from the original source plus those same patches in order, then compiled and its set5 config output checked. It should match what ran, but it is a reconstruction, not a byte copy of the PC file (comments differ).
+Note on `kras_app.py`: the file you run on the PC was written by a PowerShell here-string and then patched in place several times. This copy was rebuilt from the original source plus those same patches in order, then compiled and its set5 config output checked. The rescore code (fold_n, rescore_ctl, rescore_start, rescore_get) was appended on the PC by a separate paste and is included here. It should match what ran, but it is a reconstruction, not a byte copy of the PC file (comments differ).
 
 ## Inputs
 
@@ -39,6 +43,7 @@ Note on `kras_app.py`: the file you run on the PC was written by a PowerShell he
 2. Optional cheap checks: `03`, then `02`.
 3. `05` for the $7 run, `04` to watch it, `07` to read results.
 4. `06` for the top-up, then `07` again.
+5. `09` to pool and rank, `10` and `11` to rescore the top 20, `12` to rescore the rest and pick the final 20.
 5. `09` to pick the top 20, `10` then `11` to rescore them, `12` then `13` to rescore the rest and choose the final 20.
 
 ## The settings that mattered (all in `kras_app.py`)
