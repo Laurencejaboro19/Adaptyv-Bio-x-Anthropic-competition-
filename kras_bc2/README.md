@@ -1,23 +1,29 @@
 # Challenge 5: KRAS G12D / HLA-A*11:01 (VVVGADGVGK), BindCraft2 -> Boltz-2 -> ipSAE on Modal
 
 Goal: a binder that binds the G12D peptide-HLA complex and avoids the wild-type complex (VVVGAGGVGK) and the peptide-free HLA + b2m.
-Run from Windows PowerShell. Everything runs on [Modal](https://modal.com). **All evidence is computational. No design has passed the gates yet; see RUN_LOG.md.**
+Run from Windows PowerShell. Everything runs on [Modal](https://modal.com). **All evidence is computational. No design has passed the strict gates; see RUN_LOG.md and RESCORE_RESULTS.md.**
 No design sequences, API keys or run outputs are in this folder.
 
 ## What is here
 
 | File | What it does | Status |
 |---|---|---|
-| `kras_app.py` | Modal app: BindCraft2 design (H100), Boltz-2 refold of each design on G12D, WT and peptide-free (L40S, 3 samples), ipSAE per target chain, contact check, spend-capped controller | final version, see note below |
+| `kras_app.py` | Modal app: BindCraft2 design (H100), Boltz-2 refold of each design on G12D, WT and peptide-free (L40S, 3 samples), ipSAE per target chain, contact check, spend-capped controller | final version incl. the rescore functions (fold_n, rescore_ctl, rescore_start, rescore_get); see note below |
 | `00_modal_login.ps1` | Install Modal client, log in | one-time |
 | `01_setup_prep_warm_cache.ps1` | Upload the 3 PDBs, cache Boltz-2 weights and HLA/b2m MSAs | ran, worked |
 | `02_smoke_test.ps1` | 1 shard x 30 trajectories, refold on all 3 | ran several times, see RUN_LOG |
 | `03_refold_test.ps1` | Refold a dummy 78-aa sequence on all 3 targets to test the scoring path | ran |
 | `04_status_logs.ps1` | Progress, shard log tails, file listing | ran |
 | `05_launch_set5_about_7usd.ps1` | **The run that worked for about $7**: bind G12D, avoid both, all floors 0.3 | ran, worked as a pipeline |
-| `06_topup_cap60.ps1` | Resume the same tag with a $60 total cap | launched 2026-11-01 00:04, results not in this commit |
+| `06_topup_cap60.ps1` | Resume the same tag with a $60 total cap | ran: 14 shards, 74 designs, est $53.57, 0 passed tier A/B |
 | `07_fetch_results.ps1` | Download `designs.csv`, show top rows | ran |
 | `08_stop_app.ps1` | Stop a Modal app | ran once (kras_set4) |
+| `09_select_top20.ps1` | Pool set2 + set5, rank by G12D-minus-worst-avoid ipSAE gap, save top 20 | ran |
+| `10_rescore_top20_detached.ps1` | Detached rescore of the top 20 on all 3 targets, 8 samples, adds peptide-chain ipSAE and Asp6 distance | ran, 8.8 min, est $2.72 |
+| `11_rescore_get.ps1` | Check and download a rescore run | ran |
+| `12_rescore_remaining45_start.ps1` | Same rescore for the other 45 designs with G12D ipSAE >= 0.5 | ran (launched 10:50 UK) |
+| `13_get_and_merge_final_top20.ps1` | Merge both rescores, rank all 65, save the final top 20 | ran |
+| `RESCORE_RESULTS.md` | Selection method and final top-20 metrics (no sequences) | |
 | `configs/campaign_set5_shard0.json` | The exact BindCraft2 campaign JSON for set5 (campaign() merged with LOOSE), shard 0 | generated from `kras_app.py` |
 | `inputs/` | The 3 target PDBs | see below |
 
@@ -33,6 +39,7 @@ Note on `kras_app.py`: the file you run on the PC was written by a PowerShell he
 2. Optional cheap checks: `03`, then `02`.
 3. `05` for the $7 run, `04` to watch it, `07` to read results.
 4. `06` for the top-up, then `07` again.
+5. `09` to pick the top 20, `10` then `11` to rescore them, `12` then `13` to rescore the rest and choose the final 20.
 
 ## The settings that mattered (all in `kras_app.py`)
 
